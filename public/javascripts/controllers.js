@@ -6,15 +6,11 @@ function PollListCtrl($scope, Poll) {
 // Controller for an individual poll
 function PollItemCtrl($scope, $routeParams, socket, Poll) {
 	$scope.poll = Poll.get({pollId: $routeParams.pollId});
-  // console.log('controller is called');
-  alert('PollItemCtrl (outside of socket.on): ' + socket.id);
 
 	socket.on('myvote', function(data) {
 		// console.dir(data);
 		if(data._id === $routeParams.pollId) {
 			$scope.poll = data;
-      alert('PollItemCtrl (inside of socket.on myvote): ' + socket.id);
-      console.log('PollItemCtrl (inside of socket.on myvote): ' + socket.id);
 		}
 	});
 
@@ -23,8 +19,6 @@ function PollItemCtrl($scope, $routeParams, socket, Poll) {
 		if(data._id === $routeParams.pollId) {
 			$scope.poll.choices = data.choices;
 			$scope.poll.totalVotes = data.totalVotes;
-      alert('PollItemCtrl (inside of socket.on vote): ' + socket.id);
-      console.log('PollItemCtrl (inside of socket.on vote): ' + socket.id);
 		}
 	});
 
@@ -35,8 +29,6 @@ function PollItemCtrl($scope, $routeParams, socket, Poll) {
 		if(choiceId) {
 			var voteObj = { poll_id: pollId, choice: choiceId, socket_id: socket.id };
 			socket.emit('send:vote', voteObj);
-      console.log('PollItemCtrl (inside of $scope.vote): ' + socket.id);
-      alert('PollItemCtrl (inside of $scope.vote): ' + socket.id);
 		} else {
 			alert('You must choose an option to vote for');
 		}
@@ -68,9 +60,9 @@ function PollNewCtrl($scope, $location, Poll) {
 			for(var i = 0; i < poll.choices.length; i++) {
 				var choice = poll.choices[i];
 
-        // text provided in each of the choices cannot be empty
+        // for a choice to be counted, associated text cannot be empty.
 				if(choice.text.length > 0) {
-					choiceCount++
+					choiceCount++;
 				}
 			}
 
@@ -84,7 +76,7 @@ function PollNewCtrl($scope, $location, Poll) {
 						// If there is no error, redirect to the main view
 						$location.path('polls');
 					} else {
-						alert('Could not create poll');
+						alert('Cannot create poll due to an API error.');
 					}
 				});
 			} else {
