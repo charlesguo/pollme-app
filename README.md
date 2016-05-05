@@ -59,3 +59,9 @@ Perhaps there is no escaping the usefulness of authentication in preventing user
       * index.js - defines the Angular routes for index, list, poll, create, vote
     * views
       * index.ejs - contains the header and the footer.
+
+
+<img src="public/images/github/pollnowcreatepage.jpg" width=512 height=437 >
+<img src="public/images/github/pollnowlistpolls.jpg" width=512 height=437 >
+<img src="public/images/github/pollnowquestion.jpg" width=512 height=437 >
+<img src="public/images/github/pollnowresults.jpg" width=512 height=437 >
