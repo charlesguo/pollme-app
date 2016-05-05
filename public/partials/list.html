@@ -4,7 +4,7 @@
     <h1>Create Poll.<br>
         Let People Vote.<br>
         See Results.</h1>
-    <p> Use PollNow to view the results of polls in real-time.</p>
+    <h2> PollNow displays polls in real-time.</h2>
 
     <div class="row">
     	<div class="col-xs-5">
@@ -19,9 +19,55 @@
   </div>
 </div>
 
-<div class="page-header">
-	<h3>Poll List</h3>
+
+<div class="panel panel-default" ng-switch on="polls.length">
+  <div class="panel-heading">
+    <h3 class="panel-title">List of Available Polls</h3>
+  </div>
+
+  <div class="panel-body" ng-switch-when="0">
+    <p>There are no polls created. Do you want to <a href="#/new">create the first one</a>?</p>
+  </div>
+
+  <ul class="list-group" ng-switch-default>
+    <li class="list-group-item" ng-repeat="poll in polls | filter:query">
+    	<a href="#/poll/{{poll._id}}">{{poll.question}} </a>
+    </li>
+  </ul>
+
+  </div>
+  <p>&nbsp;</p>
 </div>
+
+<!--
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">List of Available Polls</h3>
+  </div>
+  <div class="panel-body">
+
+  </div>
+
+  <div class="row" ng-switch on="polls.length">
+
+    <ul class="list-group" ng-switch-when="0">
+    	<li class="list-group-item"><em>There are no polls created. Do you want to <a href="#/new">create the first one</a>?</li>
+    </ul>
+
+    <ul class="list-group" ng-switch-default>
+    	<li class="list-group-item" ng-repeat="poll in polls | filter:query">
+    		<a href="#/poll/{{poll._id}}">{{poll.question}}</a>
+    	</li>
+    </ul>
+
+  </div>
+  <p>&nbsp;</p>
+</div> -->
+
+
+<!-- <div class="page-header">
+	<h3>Poll List</h3>
+</div> -->
 <!-- <div class="row">
 	<div class="col-xs-5">
 		<a href="#/new" class="btn btn-default"><span class="glyphicon glyphicon-plus"></span> Create New Poll</a>
@@ -33,7 +79,7 @@
 <!-- <div class="row">
 	<div class="col-xs-12"><hr></div>
 </div> -->
-<div class="row" ng-switch on="polls.length">
+<!-- <div class="row" ng-switch on="polls.length">
 	<ul ng-switch-when="0">
 		<li><em>There are no polls created. Do you want to <a href="#/new">create the first one</a>?</li>
 	</ul>
@@ -43,4 +89,4 @@
 		</li>
 	</ul>
 </div>
-<p>&nbsp;</p>
+<p>&nbsp;</p> -->
