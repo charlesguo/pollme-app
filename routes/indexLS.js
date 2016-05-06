@@ -1,6 +1,6 @@
 // Connect to MongoDB using Mongoose
 var mongoose = require('mongoose');
-var mongoUri =  process.env.MONGODB_URI || 'mongodb://localhost/pollnow';
+var mongoUri =  process.env.MONGODB_URI || 'mongodb://localhost/pollnow-whenempty';
 mongoose.connect(mongoUri);
 var Poll = require('../models/Poll.js');
 
@@ -27,6 +27,18 @@ exports.poll = function(req, res) {
 			var userChoice;
 			var totalVotes = 0;
 
+      // // When you get more student information, you should:
+      // var addPollId = function (pollId) {
+      //   // retrieve it (Or create a blank array if there isn't any info saved yet),
+      //   var pollIdArray = localStorage.getItem('pollIdInfo') || [];
+      //   // add to it,
+      //   pollIdArray.push(pollId);
+      //   // then put it back.
+      //   localStorage.setItem('pollIdInfo', pollIdArray);
+      // }
+
+      var pollIdArray = localStorage.getItem('pollIdInfo') || [];
+
       console.log('(POLL) user req.ip in entering the poll: ' + req.ip);
 			// Loop through poll choices to determine if user has voted
 			// on this poll, and if so, what they selected
@@ -39,11 +51,14 @@ exports.poll = function(req, res) {
 
           console.log('(POLL) ip(s) of past votes: ' + vote.ip + ',  vote.id: ' + vote._id);
           // req.header('x-forwarded-for')
-					if(vote.ip ===  req.ip) {
-            console.log('vote corresponding to the user existing vote: ' + vote._id);
-						userVoted = true;
-						userChoice = { _id: choice._id, text: choice.text };
-					}
+
+          for (i in pollIdArray) {
+            if(pollId ===  pollIdArray[i]) {
+              console.log('vote corresponding to the user existing vote: ' + vote._id);
+  						userVoted = true;
+  						userChoice = { _id: choice._id, text: choice.text };
+  					}
+          }
 				}
 			}
 
@@ -85,6 +100,13 @@ exports.vote = function(socket) {
     console.log('(VOTE) user trying to vote using: ' + ip);
 
 		Poll.findById(data.poll_id, function(err, poll) {
+
+      var pollIdArray = localStorage.getItem('pollIdInfo');
+      // add to it,
+      pollIdArray.push(data.poll_id);
+      // then put it back.
+      localStorage.setItem('pollIdInfo', pollIdArray);
+
 			var choice = poll.choices.id(data.choice);
 			choice.votes.push({ ip: ip });
 

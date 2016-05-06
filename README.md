@@ -19,11 +19,11 @@ Most of the time, users will be seen to have the same IP address i.e. that of th
 
 However the issue with using the socket.request.connection.remoteAddress (or req.ip) property is that it changes every couple of minutes or so (depending on the router's setting). As such, it is not a foolproof way of distinguishing users.
 
-Without requiring the user to authenticate before voting, a voter intent on "gaming" the system can always open another browser tab, use another browser, or use another device. However, the current implementation can still be improved by either associating a vote with:
+The current implementation can still be improved by either associating a vote with:
 i) the user's socket.id OR
-ii) data stored in a JWT token stored in the user's browser.
+ii) data stored in the browser's local storage. (This requires local storage to store the PollId (if the PollId is stored in the local storage, it means that the user has already voted in the poll). The database will still need to keep track of the distribution of votes.)
 
-Perhaps there is no escaping the usefulness of authentication in preventing users from repeatedly voting in the same poll.
+Without requiring the user to authenticate before voting, a voter intent on "gaming" the system can always open another browser tab, use another browser, or use another device. Perhaps there is no escaping the usefulness of authentication in preventing users from repeatedly voting in the same poll.
 
 #### Issues with the current MVP
 
