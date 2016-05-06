@@ -1,9 +1,8 @@
 // Connect to MongoDB using Mongoose
 var mongoose = require('mongoose');
-var mongoUri =  process.env.MONGODB_URI || 'mongodb://localhost/simplepollsapp';
+var mongoUri =  process.env.MONGODB_URI || 'mongodb://localhost/pollnow-whenempty';
 mongoose.connect(mongoUri);
 var Poll = require('../models/Poll.js');
-var getmac = require('getmac');
 
 exports.index = function(req, res) {
 	res.render('index');
@@ -27,68 +26,32 @@ exports.poll = function(req, res) {
 			var userVoted = false;
 			var userChoice;
 			var totalVotes = 0;
-      var macAddr;
 
-      getmac.getMac(function(err,macAddress){
-	      if (err)
-          throw err;
-        console.log(macAddress);
-	      macAddr = macAddress;
+      console.log('(POLL) user req.ip in entering the poll: ' + req.ip);
+			// Loop through poll choices to determine if user has voted
+			// on this poll, and if so, what they selected
+			for(c in poll.choices) {
+				var choice = poll.choices[c];
 
-        console.log('(POLL) user req.ip in entering the poll: ' + req.ip);
-        console.log('(POLL) user macAddr in entering the poll: ' + macAddr);
-  			// Loop through poll choices to determine if user has voted
-  			// on this poll, and if so, what they selected
-  			for(c in poll.choices) {
-  				var choice = poll.choices[c];
+				for(v in choice.votes) {
+					var vote = choice.votes[v];
+					totalVotes++;
 
-  				for(v in choice.votes) {
-  					var vote = choice.votes[v];
-  					totalVotes++;
+          console.log('(POLL) ip(s) of past votes: ' + vote.ip + ',  vote.id: ' + vote._id);
+          // req.header('x-forwarded-for')
+					if(vote.ip ===  req.ip) {
+            console.log('vote corresponding to the user existing vote: ' + vote._id);
+						userVoted = true;
+						userChoice = { _id: choice._id, text: choice.text };
+					}
+				}
+			}
 
-            console.log('(POLL) mac(s) of past votes: ' + vote.ip + ',  vote.id: ' + vote._id);
-            // req.header('x-forwarded-for')
-  					if(vote.ip ===  macAddr) {
-              console.log('vote corresponding to the user existing vote: ' + vote._id);
-  						userVoted = true;
-  						userChoice = { _id: choice._id, text: choice.text };
-  					}
-  				}
-  			}
-
-  			// Attach info about user's past voting on this poll
-  			poll.userVoted = userVoted;
-  			poll.userChoice = userChoice;
-  			poll.totalVotes = totalVotes;
-  			res.json(poll);
-      })
-
-      // console.log('(POLL) user req.ip in entering the poll: ' + req.ip);
-      // console.log('(POLL) user macAddr in entering the poll: ' + macAddr);
-			// // Loop through poll choices to determine if user has voted
-			// // on this poll, and if so, what they selected
-			// for(c in poll.choices) {
-			// 	var choice = poll.choices[c];
-      //
-			// 	for(v in choice.votes) {
-			// 		var vote = choice.votes[v];
-			// 		totalVotes++;
-      //
-      //     console.log('(POLL) ip(s) of past votes: ' + vote.ip + ',  vote.id: ' + vote._id);
-      //     // req.header('x-forwarded-for')
-			// 		if(vote.ip ===  req.ip) {
-      //       console.log('vote corresponding to the user existing vote: ' + vote._id);
-			// 			userVoted = true;
-			// 			userChoice = { _id: choice._id, text: choice.text };
-			// 		}
-			// 	}
-			// }
-      //
-			// // Attach info about user's past voting on this poll
-			// poll.userVoted = userVoted;
-			// poll.userChoice = userChoice;
-			// poll.totalVotes = totalVotes;
-			// res.json(poll);
+			// Attach info about user's past voting on this poll
+			poll.userVoted = userVoted;
+			poll.userChoice = userChoice;
+			poll.totalVotes = totalVotes;
+			res.json(poll);
 		} else {
 			res.json({error:true});
 		}
@@ -118,84 +81,40 @@ exports.create = function(req, res) {
 
 exports.vote = function(socket) {
 	socket.on('send:vote', function(data) {
-    // var ip =  socket.request.connection.remoteAddress;
+    var ip =  socket.request.connection.remoteAddress;
+    console.log('(VOTE) user trying to vote using: ' + ip);
 
-    getmac.getMac(function(err,macAddress){
-      if (err)
-        throw err;
-      console.log(macAddress);
-      macAddr = macAddress;
+		Poll.findById(data.poll_id, function(err, poll) {
+			var choice = poll.choices.id(data.choice);
+			choice.votes.push({ ip: ip });
 
-      console.log('(VOTE) user trying to vote using: ' + macAddr);
+			poll.save(function(err, doc) {
+				var rtnDoc = {
+					question: doc.question, _id: doc._id, choices: doc.choices,
+					userVoted: false, totalVotes: 0
+				};
 
-  		Poll.findById(data.poll_id, function(err, poll) {
-  			var choice = poll.choices.id(data.choice);
-  			choice.votes.push({ ip: macAddr });
+				// rtnDoc needed to display choice after voting
+				for(var i = 0; i < doc.choices.length; i++) {
+					var choice = doc.choices[i];
 
-  			poll.save(function(err, doc) {
-  				var rtnDoc = {
-  					question: doc.question, _id: doc._id, choices: doc.choices,
-  					userVoted: false, totalVotes: 0
-  				};
+					for(var j = 0; j < choice.votes.length; j++) {
+						var vote = choice.votes[j];
+						rtnDoc.totalVotes++;
+						// rtnDoc.ip = ip;
+            console.log('(VOTE) ip(s) of past votes: ' + vote.ip);
 
-  				// rtnDoc needed to display choice after voting
-  				for(var i = 0; i < doc.choices.length; i++) {
-  					var choice = doc.choices[i];
+						if(vote.ip === ip) {
+              console.log('cannot re-vote a question!');
+							rtnDoc.userVoted = true;
+							rtnDoc.userChoice = { _id: choice._id, text: choice.text };
+						}
+					}
+				}
 
-  					for(var j = 0; j < choice.votes.length; j++) {
-  						var vote = choice.votes[j];
-  						rtnDoc.totalVotes++;
-  						// rtnDoc.ip = ip;
-              console.log('(VOTE) mac(s) of past votes: ' + vote.ip);
-
-  						if(vote.ip === macAddr) {
-                console.log('cannot re-vote a question!');
-  							rtnDoc.userVoted = true;
-  							rtnDoc.userChoice = { _id: choice._id, text: choice.text };
-  						}
-  					}
-  				}
-
-  				socket.emit('myvote', rtnDoc);
-  				socket.broadcast.emit('vote', rtnDoc);
-  			});
-  		});
-
-    })
-
-    // console.log('(VOTE) user trying to vote using: ' + ip);
-    //
-		// Poll.findById(data.poll_id, function(err, poll) {
-		// 	var choice = poll.choices.id(data.choice);
-		// 	choice.votes.push({ ip: ip });
-    //
-		// 	poll.save(function(err, doc) {
-		// 		var rtnDoc = {
-		// 			question: doc.question, _id: doc._id, choices: doc.choices,
-		// 			userVoted: false, totalVotes: 0
-		// 		};
-    //
-		// 		// rtnDoc needed to display choice after voting
-		// 		for(var i = 0; i < doc.choices.length; i++) {
-		// 			var choice = doc.choices[i];
-    //
-		// 			for(var j = 0; j < choice.votes.length; j++) {
-		// 				var vote = choice.votes[j];
-		// 				rtnDoc.totalVotes++;
-		// 				// rtnDoc.ip = ip;
-    //         console.log('(VOTE) ip(s) of past votes: ' + vote.ip);
-    //
-		// 				if(vote.ip === ip) {
-    //           console.log('cannot re-vote a question!');
-		// 					rtnDoc.userVoted = true;
-		// 					rtnDoc.userChoice = { _id: choice._id, text: choice.text };
-		// 				}
-		// 			}
-		// 		}
-    //
-		// 		socket.emit('myvote', rtnDoc);
-		// 		socket.broadcast.emit('vote', rtnDoc);
-		// 	});
-		// });
+				socket.emit('myvote', rtnDoc);
+				socket.broadcast.emit('vote', rtnDoc);
+			});
+		});
 	});
 };
